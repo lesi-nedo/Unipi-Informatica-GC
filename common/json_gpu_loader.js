@@ -1,12 +1,12 @@
-var loadOnGPU = function( jsonMesh ) {
+var loadOnGPU = function( jsonMesh, gl ) {
    var gpuMesh = {
     vertBuffer: null,
-    indexBuffer: null
+    indexBufferTriangles: null
    }
    
    gpuMesh.vertexBuffer = gl.createBuffer();
    gpuMesh.normalBuffer = gl.createBuffer();
-   gpuMesh.indexBuffer = gl.createBuffer();
+   gpuMesh.indexBufferTriangles = gl.createBuffer();
    
    gl.bindBuffer( gl.ARRAY_BUFFER, gpuMesh.vertexBuffer );
    gl.bufferData( 
@@ -22,7 +22,7 @@ var loadOnGPU = function( jsonMesh ) {
 	  gl.STATIC_DRAW
    );
   
-   gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, gpuMesh.indexBuffer );
+   gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, gpuMesh.indexBufferTriangles );
    gl.bufferData( 
       gl.ELEMENT_ARRAY_BUFFER, 
 	  new Uint16Array(jsonMesh.connectivity[0].indices), 

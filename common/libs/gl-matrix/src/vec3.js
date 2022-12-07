@@ -333,6 +333,7 @@ export function inverse(out, a) {
  * @returns {vec3} out
  */
 export function normalize(out, a) {
+
   let x = a[0];
   let y = a[1];
   let z = a[2];
@@ -344,6 +345,7 @@ export function normalize(out, a) {
   out[0] = a[0] * len;
   out[1] = a[1] * len;
   out[2] = a[2] * len;
+
   return out;
 }
 

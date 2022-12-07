@@ -33,20 +33,19 @@
       this.isBraking 			 = this.control_keys['ArrowDown'];
             
      if (this.isRotatingLeft){
-       console.log(this.isRotatingLeft);
-          this.wheelsAngle += .004;
+          this.wheelsAngle += .003;
         if( this.wheelsAngle > 0.3)   
            this.wheelsAngle = .3;
        }
        else
      if (this.isRotatingRight){
-          this.wheelsAngle -= .004;
+          this.wheelsAngle -= .003;
           if( this.wheelsAngle < -0.3)   
            this.wheelsAngle  = -.3;
        }       
-       else 
-      this.wheelsAngle*= 1.0/(1.0+0.5*Math.abs(this.speed));
-       
+       else {
+		this.wheelsAngle*= 1.0/(1.0+0.5*Math.abs(this.speed));
+	   }
       if(this.isAccelerating && this.speed < 0  ||this.isBraking && this.speed > 0 )
         this.speed *= 0.88;
         
@@ -63,7 +62,7 @@
         this.speed  = this.max_speed;
 
       if(this.speed < -this.max_back_speed)
-       this.speed = -this.max_back_speed;
+       	this.speed = -this.max_back_speed;
         
 			this.angle += this.wheelsAngle*this.speed;
 
