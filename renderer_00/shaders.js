@@ -12,6 +12,7 @@ uniformShader = function (gl) {//line 1,Listing 2.14
     mat4 inverse(mat4 m);
     mat4 identity();
     
+    varying vec4 normal_color;
                     
     void main(void)                                
     {
@@ -79,7 +80,10 @@ uniformShader = function (gl) {//line 1,Listing 2.14
     uniform mat4 uInvViewMatrix;
     uniform mat4 uTrackballMatrix;
     uniform mat4 uInvTrackballMatrix;
-    uniform vec4 uColor;                           
+    uniform vec4 uColor;
+    
+    varying vec4 normal_color;
+
     void main(void)                                
     {                                              
       gl_FragColor = vec4(uColor);                 
