@@ -3,16 +3,13 @@ uniformShader = function (gl) {//line 1,Listing 2.14
     uniform   mat4 uViewMatrix;               
     uniform   mat4 uProjectionMatrix;
     uniform   mat4 uTrackballMatrix;
-    uniform   mat4 uRotateMatrix;
     uniform   mat4 uM;
-    uniform   mat4 uInvToViewSpace;
       
     attribute vec3 aPosition; 
     attribute vec3 aNormal;	
     mat4 inverse(mat4 m);
     mat4 identity();
     
-    varying vec4 normal_color;
                     
     void main(void)                                
     {
@@ -76,13 +73,8 @@ uniformShader = function (gl) {//line 1,Listing 2.14
 
   var fragmentShaderSource = `
     precision highp float;
-    
-    uniform mat4 uInvViewMatrix;
-    uniform mat4 uTrackballMatrix;
-    uniform mat4 uInvTrackballMatrix;
     uniform vec4 uColor;
     
-    varying vec4 normal_color;
 
     void main(void)                                
     {                                              
@@ -126,11 +118,6 @@ uniformShader = function (gl) {//line 1,Listing 2.14
   shaderProgram.uViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uViewMatrix");
   shaderProgram.uModelMatrixLocation = gl.getUniformLocation(shaderProgram, "uM");
   shaderProgram.uProjectionMatrixLocation = gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
-  shaderProgram.uTrackballMatrixLocation = gl.getUniformLocation(shaderProgram, "uTrackballMatrix");
-  shaderProgram.uInvTrackballMatrixLocation = gl.getUniformLocation(shaderProgram, "uInvTrackballMatrix");
-  shaderProgram.uInvToViewSpaceMatrixLocation = gl.getUniformLocation(shaderProgram, "uInvToViewSpace");
-  shaderProgram.uRotateMatrixLocation = gl.getUniformLocation(shaderProgram, "uRotateMatrix");
-  shaderProgram.uInvViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uInvViewMatrix");
   shaderProgram.uColorLocation = gl.getUniformLocation(shaderProgram, "uColor");
 
   return shaderProgram;
