@@ -1,4 +1,4 @@
-function TrackMaker_texCoords(track,scale) {
+function TexturedTrack(track,scale) {
 	this.name = "TexturedTrack";
 
 	var nv = track.pointsCount;
@@ -24,7 +24,7 @@ function TrackMaker_texCoords(track,scale) {
 	}
 
 	/* create texture coordinates */
-	this.texCoords = new Float32Array((nv+1) * 2 * 2);
+	this.textureCoord = new Float32Array((nv+1) * 2 * 2);
 	var d = 0.0;
 	var v = track.leftSideAt(0);
 	var lp = [v[0],v[1],v[2]];
@@ -34,8 +34,8 @@ function TrackMaker_texCoords(track,scale) {
 		lp = v;
 		var v = track.leftSideAt(i%nv);
 		d = d + Math.sqrt( ( lp[0]-v[0])*( lp[0]-v[0])+(lp[1]-v[1])*(lp[1]-v[1])+(lp[2]-v[2])*(lp[2]-v[2]));
-		this.texCoords[vertexOffset + 0] = 0.0;
-		this.texCoords[vertexOffset + 1] = d*scale;
+		this.textureCoord[vertexOffset + 0] = 0.0;
+		this.textureCoord[vertexOffset + 1] = d*scale;
 		vertexOffset += 2;
 	}	
 	
@@ -46,8 +46,8 @@ function TrackMaker_texCoords(track,scale) {
 		lp = v;
 		var v = track.leftSideAt(i%nv);
 		d = d + Math.sqrt( ( lp[0]-v[0])*( lp[0]-v[0])+(lp[1]-v[1])*(lp[1]-v[1])+(lp[2]-v[2])*(lp[2]-v[2]));
-		this.texCoords[vertexOffset + 0] = 1.0;
-		this.texCoords[vertexOffset + 1] = d*scale;
+		this.textureCoord[vertexOffset + 0] = 1.0;
+		this.textureCoord[vertexOffset + 1] = d*scale;
 		vertexOffset += 2;
 	}	
 	

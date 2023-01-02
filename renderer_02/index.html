@@ -13,6 +13,8 @@
 		<script type="text/javascript" src="./../common/libs/gl-matrix/dist/gl-matrix.js"></script>
 		<script type="text/javascript" src="./../common/libs/matrix-stack.js">				    </script>
 		<script type="text/javascript" src="./../common/shapes/track_maker.js">                  </script>
+		<script type="text/javascript" src="./../common/shapes/track_maker_texCoords.js">                  </script>
+		<script type="text/javascript" src="./../common/shapes/building_maker_texCoords.js">              </script>
 		<script type="text/javascript" src="./../common/shapes/building_maker.js">              </script>
 		<script type="text/javascript" src="./../common/shapes/quadrilateral.js">        </script>
 		<script type="text/javascript" src="./../common/shapes/triangle_car.js">			      	</script>
@@ -26,12 +28,14 @@
 		<script type="text/javascript" src="./../common/compute_normals.js"></script>
 
 	<script type="module" src="../renderer_01/shaderPhong.js">				</script>
-  	<script type="text/javascript" src="./shaders.js">				</script>
-		<script type="module" src="./main_00.js">						</script>
-	<script type="module" src="./helperFun.js">							</script>
+  	<script type="text/javascript" src="../renderer_00/shaders.js">				</script>
+      <script type="module" src="./shadowMapShader.js">				</script>
+
+		<script type="module" src="../renderer_00/main_00.js">						</script>
+	<script type="module" src="../renderer_00/helperFun.js">							</script>
 
 	<script type="module" src="../renderer_01/main_01.js"></script>
-	
+	<script type="module" src="./main_02.js"></script>
 
   </head>
 
@@ -50,9 +54,9 @@
 
 <div>
 <label for="cameras">Choose a camera:</label>
-<select name="cameras" id="cameras"  value="1" onchange="update_camera(this.value)">
+<select name="cameras" id="cameras"   value="1" onchange="update_camera(this.value)">
   <option value="0">FollowFromUp</option>
-  <option value="1" selected>Chase</option>
+  <option  value="1" selected>Chase</option>
 </select>
 </div>
     

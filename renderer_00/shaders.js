@@ -14,7 +14,7 @@ uniformShader = function (gl) {//line 1,Listing 2.14
     void main(void)                                
     {
      
-      mat4 toViewSpace = uViewMatrix *uTrackballMatrix * uM;
+      mat4 toViewSpace = uViewMatrix * uTrackballMatrix * uM;
       
       gl_Position = uProjectionMatrix *            
       toViewSpace * vec4(aPosition, 1.0);     
@@ -117,6 +117,7 @@ uniformShader = function (gl) {//line 1,Listing 2.14
   shaderProgram.aNormalIndex = aNormalIndex;
   shaderProgram.uViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uViewMatrix");
   shaderProgram.uModelMatrixLocation = gl.getUniformLocation(shaderProgram, "uM");
+  shaderProgram.uTrackballMatrixLocation = gl.getUniformLocation(shaderProgram, "uTrackballMatrix");
   shaderProgram.uProjectionMatrixLocation = gl.getUniformLocation(shaderProgram, "uProjectionMatrix");
   shaderProgram.uColorLocation = gl.getUniformLocation(shaderProgram, "uColor");
 

@@ -1,4 +1,4 @@
-import { Renderer, matTo33 } from "../renderer_00/main_00.js";
+import { Renderer } from "../renderer_00/main_00.js";
 
 'use strict'
 
@@ -87,9 +87,9 @@ Renderer.createLamps = function (){
 
 
 
-Renderer.drawLighting = function (view_transform ) {
-    this.lightsGeometryViewSpace[0] = glMatrix.vec4.transformMat4(glMatrix.vec4.create(), [this.sunDir[0], this.sunDir[1], this.sunDir[2], 0.0], view_transform);
-    this.lightsColor[0] = [0.3, 0.3, 0.3, 1.0];
+Renderer.drawLighting = function (view_transform, shader ) {
+    this.lightsGeometryViewSpace[0] = glMatrix.vec4.transformMat4(glMatrix.vec4.create(), [this.sunDir[0], this.sunDir[1], 0.0, 0.0], view_transform);
+    this.lightsColor[0] = [0.5, 0.5, 0.5, 1.0];
     for(let i = 0; i < this.streetLamps.length; i++){
         this.lightsGeometryViewSpace[i+1] =  glMatrix.vec4.transformMat4(glMatrix.vec4.create(), this.streetLamps[i].light.geometry, view_transform);
         this.lightsColor[i+1] = this.streetLamps[i].light.color;
@@ -102,26 +102,26 @@ Renderer.drawLighting = function (view_transform ) {
 
 
     for(let i = 0; i < this.streetLamps.length+1; i++){
-        this.gl.uniform4fv(this.phongShader.uLightsGeometryLocation[i], this.lightsGeometryViewSpace[i]);
-        this.gl.uniform4fv(this.phongShader.uLightsColorLocation[i], this.lightsColor[i]);
+        this.gl.uniform4fv(shader.uLightsGeometryLocation[i], this.lightsGeometryViewSpace[i]);
+        this.gl.uniform4fv(shader.uLightsColorLocation[i], this.lightsColor[i]);
     }
 
-    this.gl.uniform3fv(this.phongShader.uSpotLightsPosLocation[0], vecTo3(this.spotLights[0].posViewSpace));
-    this.gl.uniform3fv(this.phongShader.uSpotLightsPosLocation[1], vecTo3(this.spotLights[1].posViewSpace));
-    this.gl.uniform3fv(this.phongShader.uSpotLightsDirLocation[0], vecTo3(this.spotLights[0].dirViewSpace));
-    this.gl.uniform3fv(this.phongShader.uSpotLightsDirLocation[1], vecTo3(this.spotLights[1].dirViewSpace));
-    this.gl.uniform4fv(this.phongShader.uSpotLightsColorLocation[0], [0.0, 0.4, 0.9, 1.0]);
-    this.gl.uniform4fv(this.phongShader.uSpotLightsColorLocation[1], [0.0, 0.4, 0.9, 1.0]);
+    this.gl.uniform3fv(shader.uSpotLightsPosLocation[0], vecTo3(this.spotLights[0].posViewSpace));
+    this.gl.uniform3fv(shader.uSpotLightsPosLocation[1], vecTo3(this.spotLights[1].posViewSpace));
+    this.gl.uniform3fv(shader.uSpotLightsDirLocation[0], vecTo3(this.spotLights[0].dirViewSpace));
+    this.gl.uniform3fv(shader.uSpotLightsDirLocation[1], vecTo3(this.spotLights[1].dirViewSpace));
+    this.gl.uniform4fv(shader.uSpotLightsColorLocation[0], [1, 0.98823529411, 0.9, 0.49803921568]);
+    this.gl.uniform4fv(shader.uSpotLightsColorLocation[1], [1, 0.98823529411, 0.9, 0.49803921568]);
     
-    this.gl.uniform1f(this.phongShader.uSpotLightsCutOffLocation[0], this.spotLights[0].cutOff);
-    this.gl.uniform1f(this.phongShader.uSpotLightsCutOffLocation[1], this.spotLights[1].cutOff);
-    this.gl.uniform1f(this.phongShader.uSpotLightsFallOffLocation[0], this.spotLights[0].fallOff);
-    this.gl.uniform1f(this.phongShader.uSpotLightsFallOffLocation[1], this.spotLights[1].fallOff);
+    this.gl.uniform1f(shader.uSpotLightsCutOffLocation[0], this.spotLights[0].cutOff);
+    this.gl.uniform1f(shader.uSpotLightsCutOffLocation[1], this.spotLights[1].cutOff);
+    this.gl.uniform1f(shader.uSpotLightsFallOffLocation[0], this.spotLights[0].fallOff);
+    this.gl.uniform1f(shader.uSpotLightsFallOffLocation[1], this.spotLights[1].fallOff);
 
-    this.gl.uniform1f(this.phongShader.uKaLocation,1);
-	this.gl.uniform1f(this.phongShader.uKdLocation,0.7);
-	this.gl.uniform1f(this.phongShader.uKsLocation,0.5);
-	this.gl.uniform1f(this.phongShader.uShininessLocation,0.5);
+    this.gl.uniform1f(shader.uKaLocation,0.5);
+	this.gl.uniform1f(shader.uKdLocation,0.5);
+	this.gl.uniform1f(shader.uKsLocation,0.5);
+	this.gl.uniform1f(shader.uShininessLocation,0.5);
     
 
 }

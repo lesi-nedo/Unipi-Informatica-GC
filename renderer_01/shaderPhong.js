@@ -93,7 +93,7 @@ export class PhongShader {
                         r = 1.0;
                         lc = uLightsColor[i].xyz;
                     }
-                    vec3 V = normalize(-vPos);
+                    vec3 V = -normalize(vPos);
                     final += phongShading(L, N, V, lc);
                 }
 
@@ -126,13 +126,13 @@ export class PhongShader {
 
                 float N_dot_L = max(0.0, dot(N, L));
                 diffuse = (k_diffuse * lightColor) * N_dot_L;
-
+                
                 vec3 H = normalize(L + V);
 
                 float spec = pow(max(dot(N, H), 0.0), uShininess);
                 specular = (k_specular * lightColor) * spec;
 
-                return uKa * ambient * uKd * diffuse;
+                return uKa * ambient + uKd * diffuse + uKs * specular;
             }
 
             `
@@ -160,7 +160,6 @@ export class PhongShader {
         this.#program.vertexShader = vertexShader;
         this.#program.fragmentShader = fragmentShader;
 
-        console.log(this.#gl.getProgramParameter(this.#program, this.#gl.LINK_STATUS));
         if(!this.#gl.getProgramParameter(this.#program, this.#gl.LINK_STATUS)){
             alert('Unable to initialize the shader program');
             const str = `

@@ -1,5 +1,6 @@
 
-		 class Car {
+class Car {
+	static #STEER_ACCELERATION = 5;
       constructor(name, start_position){
          this.name = name;
          this.position = start_position;
@@ -7,6 +8,7 @@
          this.max_back_speed = 0.09;
       }
      
+	  rotationWheels = 0.0;
       isRotatingLeft	 = false;
       isRotatingRight	 = false;           
       isAccelerating	 = false;
@@ -16,6 +18,7 @@
       angle				     = Math.PI;
       direction  		   = [0.0,0.0,0.0];
       position			   = [0.0,0.0,0.0];
+	  orientation 		 = 4.17;
       control_keys		 = [];
       frame            = glMatrix.mat4.create();
       lastAnimationTime = -1.0;
@@ -25,7 +28,9 @@
           this.lastAnimationTime = currTime;
           return;
         }
-			const deltaV = (currTime-this.lastAnimationTime);
+		const deltaV = (currTime-this.lastAnimationTime);
+		const dt = deltaV/1000.0;
+		let angularAcceleration = 0;
       this.lastAnimationTime = currTime; 
       this.isRotatingLeft  = this.control_keys['ArrowLeft'];
       this.isRotatingRight = this.control_keys['ArrowRight'];
@@ -34,13 +39,15 @@
             
      if (this.isRotatingLeft){
           this.wheelsAngle += .003;
+		  angularAcceleration = Car.#STEER_ACCELERATION;
         if( this.wheelsAngle > 0.3)   
            this.wheelsAngle = .3;
        }
        else
      if (this.isRotatingRight){
-          this.wheelsAngle -= .003;
-          if( this.wheelsAngle < -0.3)   
+		angularAcceleration = -Car.#STEER_ACCELERATION;
+		this.wheelsAngle -= .003;
+		if( this.wheelsAngle < -0.3)   
            this.wheelsAngle  = -.3;
        }       
        else {
@@ -49,14 +56,24 @@
       if(this.isAccelerating && this.speed < 0  ||this.isBraking && this.speed > 0 )
         this.speed *= 0.88;
         
-      if (!this.isAccelerating && !this.isBraking ) 
+      if (!this.isAccelerating && !this.isBraking ){
         this.speed *= 0.98;
+		if(this.speed > 0){
+			this.rotationWheels += this.speed * 0.1;
+		} else {
+			this.rotationWheels += this.speed *0.5;
+		}
+	  }
           
-      if(this.isAccelerating) 	 	
+      if(this.isAccelerating){ 	 	
           this.speed +=deltaV;
+		  this.rotationWheels += this.speed * 0.003;
+	  }
         
-      if(this.isBraking) 	 	
+      if(this.isBraking){	 	
           this.speed -=deltaV;
+		  this.rotationWheels += this.speed * 0.003;
+	  }
 
       if(this.speed>this.max_speed)
         this.speed  = this.max_speed;
@@ -71,7 +88,7 @@
 			
 			
       this.direction = [cosC,0, -sinC];
-      
+      this.orientation = this.orientation + angularAcceleration * dt;
       this.position[0] = this.position[0] + this.direction[0]*this.speed;
       this.position[2] = this.position[2] + this.direction[2]*this.speed;
       

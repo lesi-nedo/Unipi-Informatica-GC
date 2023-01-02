@@ -7,21 +7,20 @@ import { PhongShader } from '../renderer_01/shaderPhong.js';
 
 /* the main object to be implementd */
 export const Renderer = new Object();
+export const trackball_matrix = glMatrix.mat4.create();
 
 const view_transform = glMatrix.mat4.create();
 const toView = glMatrix.mat4.create();
-const trackball_matrix = glMatrix.mat4.create();
 const trackball_rotation = glMatrix.mat4.create();
 const trackball_scaling  = glMatrix.mat4.create();
 const trackball_translate = glMatrix.mat4.create();
-const DEFAULT_eyeVecFollowCam = [0.0, 5.0, 0.0, 0.0];
+const DEFAULT_eyeVecFollowCam = [0.0, 50.0, 0.0, 0.0];
 const DEFAULT_eyeVecChaseCam = [0 , 1.5, 4.0, 10.0];
 const DEFAULT_targetVecChaseCam = [0, 0, 0];
 const DEFAULT_targetVecFollowCam = [0.0, 0.0, 0.0];
 const DEFAULT_upVecFollowCam = [-5, 0.0, -1.0, 0.0];
 const DEFAULT_upVecChaseCam = [0.0,1.0, 0, 0.0];
 
-const invTrackball_matrix  = glMatrix.mat4.create();
 const SMOOTH_FACTOR= 0.0005;
 const initialScale = 1;
 const trans_axis = glMatrix.vec3.create();
@@ -35,13 +34,12 @@ let target = glMatrix.vec3.create();
 let up = glMatrix.vec4.create();
 let reset = 0;
 let alpha = 0, beta =0;
-let rotAngleWheelsRad = 0;
 let rotating = false;
 let start_point = [0, 0, 0];
 let lastMousePos = [1, 1, 1];
 
 let scaling_factor = initialScale;
-let projection_matrix;
+let projection_matrix =glMatrix.mat4.create();
 let scale_matrix = glMatrix.mat4.create();
 let translate_matrix = glMatrix.mat4.create();
 let rotate_transform = glMatrix.mat4.create();
@@ -98,10 +96,15 @@ const ChaseCamera = function(){
   }
 
   /* return the transformation matrix to transform from worlod coordiantes to the view reference frame */
-  this.matrix = function(){
-    glMatrix.vec3.transformMat4(eye, eyeVec, this.frame);
-    glMatrix.vec3.transformMat4(target, targetVec, this.frame);
-    glMatrix.vec4.transformMat4(up, upVec, this.frame);
+  this.matrix = function(eyeVecPar, targetVecPar, upVecPar){
+    if(!eyeVecPar || !targetVecPar || !upVec){
+      eyeVecPar = DEFAULT_eyeVecChaseCam;
+      targetVecPar = DEFAULT_targetVecChaseCam;
+      upVecPar = DEFAULT_upVecChaseCam;
+    }
+    glMatrix.vec3.transformMat4(eye, eyeVecPar, this.frame);
+    glMatrix.vec3.transformMat4(target, targetVecPar, this.frame);
+    glMatrix.vec4.transformMat4(up, upVecPar, this.frame);
     
     let diffTarget = target;
     glMatrix.vec3.transformMat4(target, target, trackball_translate);
@@ -184,9 +187,14 @@ Renderer.createObjectBuffers = function (gl, obj, lineColor) {
       d=0;
     } else if(obj.name === 'Wheel_Normals'){
       a = 2;
-      b=1;
+      b=0;
       c=0;
-      d=3;
+      d=1;
+    } else if(obj.name === 'Body_Normals'){
+      a=0;
+      b=2;
+      c=0;
+      d=0;
     }
     for (var i = 0; i < obj.numTriangles; ++i) {
       edges[i * 4 + 0] = obj.triangleIndices[i * 3 + a];
@@ -239,15 +247,19 @@ initialize the object in the scene
 */
 Renderer.initializeObjects = function (gl) {
   Game.setScene(scene_0);
-  this.sunDir = glMatrix.vec3.normalize(glMatrix.vec3.create(), Game.scene.weather.sunLightDirection);
+  this.sunDir =Game.scene.weather.sunLightDirection;
 
   this.car = Game.addCar("mycar");
   this.cube = new Cube(10);
+  this.cube.name = "Body";
   ComputeNormals(this.cube);
+  this.cube.normals = this.cube.normals.map(x => x*-1);
   this.createObjectBuffers(gl,this.cube);
   
   this.cylinder = new Cylinder(10);
   this.cylinder.name = 'Wheel';
+  this.cube.normals = this.cube.normals.map(x => x*-1);
+
   ComputeNormals(this.cylinder);
   this.createObjectBuffers(gl,this.cylinder );
 
@@ -264,7 +276,6 @@ Renderer.initializeObjects = function (gl) {
   this.myCar = loadOnGPU(bodyCar, Renderer.gl);
 
 };
-let i = 0;
 
 
 /*
@@ -278,6 +289,7 @@ Renderer.drawCar = function (gl) {
     scale_matrix      = glMatrix.mat4.create();
     const normalMatrix  = glMatrix.mat4.create();
     const viewModelMatrix = glMatrix.mat4.create();
+    let rotAngleWheelsRad = 0;
 
     let rotRad = this.car.wheelsAngle*10;
     if(rotRad > 0.3){
@@ -298,7 +310,6 @@ Renderer.drawCar = function (gl) {
     Renderer.stack.multiply(M);
     glMatrix.mat4.mul(viewModelMatrix, toView, this.stack.matrix);
     glMatrix.mat4.transpose(normalMatrix, glMatrix.mat4.invert(normalMatrix, viewModelMatrix));
-    console.log(matTo33(normalMatrix));
     this.gl.uniformMatrix3fv(this.phongShader.uViewNormalMatrixLocation, false, matTo33(normalMatrix));
     gl.uniformMatrix4fv(this.phongShader.uModelViewMatrixLocation, false, viewModelMatrix);
 
@@ -319,14 +330,13 @@ Renderer.drawCar = function (gl) {
     glMatrix.mat4.identity(M);
 
     let radius = 0.2;
-    let deltaS = this.car.position[2] * this.car.speed;
-    let deltaAngle = (deltaS/radius)*toRad;
-    rotAngleWheelsRad += deltaAngle;
-    rotAngleWheelsRad = Math.abs(rotAngleWheelsRad) > 100*3.14 ? 0 : rotAngleWheelsRad;
+    rotAngleWheelsRad = (this.car.rotationWheels/radius);
+
 
     glMatrix.mat4.fromTranslation(translate_matrix,[-0.8,0.2,-0.7]);
     glMatrix.mat4.mul(M,translate_matrix,Mw);
-    Renderer.stack.push();
+
+    this.stack.push();
     Renderer.stack.multiply(M);
     let rotMatY = glMatrix.mat4.fromYRotation(glMatrix.mat4.create(), rotRad);
     let rotMatYAngular = glMatrix.mat4.fromYRotation(glMatrix.mat4.create(), rotAngleWheelsRad);
@@ -337,15 +347,13 @@ Renderer.drawCar = function (gl) {
     glMatrix.mat4.transpose(normalMatrix, glMatrix.mat4.invert(normalMatrix, viewModelMatrix))
     this.gl.uniformMatrix3fv(this.phongShader.uViewNormalMatrixLocation, false, matTo33(normalMatrix));
     gl.uniformMatrix4fv(this.phongShader.uModelViewMatrixLocation, false, viewModelMatrix);
-  
     this.drawObject(gl, this.cylinder, this.phongShader,[1.0,0.6,0.5,1.0],[0.2, 0.2, 0.2, 1.0]);
-    Renderer.stack.pop();
     Renderer.stack.pop();
 
     glMatrix.mat4.fromTranslation(translate_matrix,[0.8,0.2,-0.7]);
     glMatrix.mat4.mul(M,translate_matrix,Mw);
 
-    Renderer.stack.push();
+    this.stack.push();
     Renderer.stack.multiply(M);
     Renderer.stack.multiply(rotMatYAngular);
 
@@ -356,7 +364,6 @@ Renderer.drawCar = function (gl) {
     gl.uniformMatrix4fv(this.phongShader.uModelViewMatrixLocation, false, viewModelMatrix);
   
     this.drawObject(gl, this.cylinder,  this.phongShader, [1.0,0.6,0.5,1.0],[0.2, 0.2, 0.2, 1.0]);
-    Renderer.stack.pop();
     Renderer.stack.pop();
 
     /* this will increase the size of the wheel to 0.4*1,5=0.6 */
@@ -374,9 +381,9 @@ Renderer.drawCar = function (gl) {
     glMatrix.mat4.transpose(normalMatrix, glMatrix.mat4.invert(normalMatrix, viewModelMatrix))
     this.gl.uniformMatrix3fv(this.phongShader.uViewNormalMatrixLocation, false, matTo33(normalMatrix));
     gl.uniformMatrix4fv(this.phongShader.uModelViewMatrixLocation, false, viewModelMatrix);
-    Renderer.stack.pop();
 
     this.drawObject(gl,  this.cylinder, this.phongShader, [1.0,0.6,0.5,1.0],[0.2, 0.2, 0.2, 1.0]);
+    Renderer.stack.pop();
 
     glMatrix.mat4.fromTranslation(translate_matrix,[-0.8,0.3,0.7]);
     glMatrix.mat4.mul(M,translate_matrix,Mw);
@@ -394,7 +401,8 @@ Renderer.drawCar = function (gl) {
     Renderer.stack.pop();
 };
 
-Renderer.drawLamp = function(shader){
+Renderer.drawLamp = function(shader, MS_LAMP_SHADOW){
+  this.gl.useProgram(shader);
   this.stack.push();
   const M = glMatrix.mat4.fromTranslation(glMatrix.mat4.create(), [0, 2, 0]);
   this.stack.multiply(M);
@@ -402,15 +410,30 @@ Renderer.drawLamp = function(shader){
   const M1 = glMatrix.mat4.fromScaling(glMatrix.mat4.create(), [0.2, 0.1, 0.2]);
   this.stack.multiply(M1);
 
-  this.gl.uniformMatrix4fv(shader.uModelMatrixLocation, false, this.stack.matrix);
-  this.drawObject(this.gl, this.cube, shader, [0.1, 1, 1, 1.0]);
+  if(shader.uModelViewMatrixLocation){
+    this.gl.uniformMatrix4fv(shader.uModelViewMatrixLocation, false, this.stack.matrix);
+
+  } else {
+    this.gl.uniformMatrix4fv(shader.uModelMatrixLocation, false, this.stack.matrix);
+  }
+  if(MS_LAMP_SHADOW)
+    this.gl.uniformMatrix4fv(shader.uShadowMatrixLocation, false, MS_LAMP_SHADOW[0]);
+  this.drawObject(this.gl, this.cube, shader, [0.9, 1, 1, 1.0]);
   this.stack.pop();
 
   const M_scal = glMatrix.mat4.fromScaling(glMatrix.mat4.create(), [0.05, 1, 0.05]);
   this.stack.multiply(M_scal);
 
-  this.gl.uniformMatrix4fv(shader.uModelMatrixLocation, false, this.stack.matrix);
-  this.drawObject(this.gl, this.phongShader, shader, this.cylinder, [0.6, 0.23, 0.12, 1]);
+  if(MS_LAMP_SHADOW)
+    this.gl.uniformMatrix4fv(shader.uShadowMatrixLocation, false, MS_LAMP_SHADOW[1]);
+  if(shader.uModelViewMatrixLocation){
+    this.gl.uniformMatrix4fv(shader.uModelViewMatrixLocation, false, this.stack.matrix);
+  
+  } else {
+    this.gl.uniformMatrix4fv(shader.uModelMatrixLocation, false, this.stack.matrix);
+  }
+  this.drawObject(this.gl, this.cylinder, shader, [0.6, 0.23, 0.12, 1]);
+  this.stack.pop();
 }
 
 
@@ -421,6 +444,7 @@ Renderer.drawScene = function (gl) {
   const inv_view_transform = glMatrix.mat4.create();
   const invToView = glMatrix.mat4.create();
   this.stack = new MatrixStack();
+  
 
   gl.viewport(0, 0, width, height);
   
@@ -435,15 +459,18 @@ Renderer.drawScene = function (gl) {
 
   gl.useProgram(this.phongShader);
   
+  
+
+  
+  glMatrix.mat4.copy(view_transform, Renderer.cameras[Renderer.currentCamera].matrix(eyeVec, targetVec, upVec));
   glMatrix.mat4.mul(toView, view_transform, trackball_matrix);
-
-  this.drawLighting(toView, projection_matrix)  
-
-  glMatrix.mat4.copy(view_transform, Renderer.cameras[Renderer.currentCamera].matrix());
+  this.drawLighting(toView, this.phongShader);  
+  
   gl.uniformMatrix4fv(this.phongShader.uProjectionMatrixLocation, false, projection_matrix);
   gl.uniformMatrix4fv(this.phongShader.uModelViewMatrixLocation, false, toView);
   gl.uniformMatrix3fv(this.phongShader.uViewNormalMatrixLocation, false, matTo33(toView));
 
+  
   // gl.uniformMatrix4fv(this.uniformShader.uViewMatrixLocation, false, view_transform);
   // gl.uniformMatrix4fv(this.uniformShader.uTrackballMatrixLocation, false, trackball_matrix);
   
@@ -475,17 +502,25 @@ Renderer.drawScene = function (gl) {
  	this.drawObject(gl, Game.scene.trackObj, this.phongShader, [0.9, 0.8, 0.7, 1.0], [1.0, 0, 0, 1.0]);
 	for (var i in Game.scene.buildingsObj) 
 		this.drawObject(gl, Game.scene.buildingsObj[i], this.phongShader, [0.8, 0.8, 0.8, 1.0], [0.2, 0.2, 0.2, 1.0]);
+    this.stack.loadIdentity();
+    this.stack.push();
+  gl.useProgram(this.uniformShader);
+  gl.uniformMatrix4fv(this.uniformShader.uProjectionMatrixLocation, false, projection_matrix);
+  gl.uniformMatrix4fv(this.uniformShader.uViewMatrixLocation, false, view_transform);
+  gl.uniformMatrix4fv(this.uniformShader.uTrackballMatrixLocation, false, trackball_matrix);
+    for(let i =0; i < this.streetLamps.length; i++){
+      this.stack.push();
+      const MLamp = glMatrix.mat4.fromTranslation(glMatrix.mat4.create(), this.streetLamps[i].position);
+      this.stack.multiply(MLamp);
 
-  // gl.useProgram(this.uniformShader);
-    // for(let i =0; i < this.streetLamps.length; i++){
-    //   const MLamp = glMatrix.mat4.fromTranslation(glMatrix.mat4.create(), this.streetLamps[i].position);
-    //   this.stack.multiply(MLamp);
-    //   this.drawLamp();
-    //   this.stack.pop(); 
-    // }
+      this.drawLamp(this.uniformShader);
+
+    }
+    this.stack.pop();
 
 	gl.useProgram(null);
-  this.stack.pop();
+  
+
 };
 
 
@@ -506,6 +541,7 @@ Renderer.setupAndStart = function () {
   const ratio = width / height;
 
   projection_matrix = glMatrix.mat4.perspective(glMatrix.mat4.create(),3.14 / 4, ratio, 1, 500);
+  
   setRotationToDef(eyeVec, upVec);
   /* read the webgl version and log */
 	var gl_version = Renderer.gl.getParameter(Renderer.gl.VERSION); 
@@ -526,6 +562,12 @@ Renderer.setupAndStart = function () {
   /*
   add listeners for the mouse / keyboard events
   */
+  Renderer.addListeners();
+
+  Renderer.Display();
+}
+
+Renderer.addListeners = function () {
   Renderer.canvas.addEventListener('mousemove',on_mouseMove,false);
   Renderer.canvas.addEventListener('keydown',on_keydown,false);
   Renderer.canvas.addEventListener('keyup',on_keyup,false);
@@ -533,11 +575,7 @@ Renderer.setupAndStart = function () {
   Renderer.canvas.addEventListener('mousedown', on_mousedown, false);
   Renderer.canvas.addEventListener('mousemove', on_mouseMove, false);
   Renderer.canvas.addEventListener('wheel', on_mouseWheel, false);
-
-  Renderer.Display();
 }
-
-
 
 
 
@@ -631,6 +669,7 @@ const on_mousedown = (e) => {
 
 
 const on_mouseMove = function(e){
+  
   e.preventDefault();
   if(!rotating){
    
@@ -706,6 +745,7 @@ const on_mouseWheel = (e) => {
 }
 
 const on_keyup = function(e){
+
 	Renderer.car.control_keys[e.key] = false;
   
 }
@@ -762,9 +802,8 @@ function updateView(){
   beta = 0;
 }
 
-function rotateMulStack(rotateMatrix, stack){
+export function rotateMulStack(rotateMatrix, stack){
   let matrixToMul = stack.matrix;
-  stack.push();
   stack.loadIdentity();
   rotateMul(rotateMatrix, matrixToMul);
   stack.multiply(matrixToMul);
